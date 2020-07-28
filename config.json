@@ -1,0 +1,13 @@
+{
+    "UDPPORT": 50222,
+    "mongoDBName": "",
+    "mongoDBHost": "",
+    "mongoDBPort": 27017,
+    "mongoDBUserName": "",
+    "mongoDBPassword": "",
+    "influxDBHost": "influxdb",
+    "influxDBName": "weatherflow",
+    "influxDBPort": 8086,
+    "influxDBUserName": "",
+    "influxDBPassword": ""
+}
