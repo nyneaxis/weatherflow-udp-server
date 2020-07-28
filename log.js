@@ -1,20 +1,22 @@
+require('log-timestamp');
+
 const {
     createDateTime
 } = require("./helpers");
 
 exports.logMessage = (message, level) => {
     if (level == "error") {
-        console.error(createDateTime(Date.now()) + ": " + message);
+        console.error(message);
         return;
 
     }
 
     if (level == "info") {
-        console.info(createDateTime(Date.now()) + ": " + message);
+        console.info(message);
         return;
 
     }
 
-    console.log(createDateTime(Date.now() + ": " + message));
+    console.log(message);
 
 }

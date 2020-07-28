@@ -3,7 +3,7 @@ const fs = require("fs");
 
 let config = {};
 
-fs.readFile("./config.json", "utf8", function (err, data) {
+fs.readFile("./config/config.json", "utf8", function (err, data) {
     if (err) {
         console.log(err);
     }

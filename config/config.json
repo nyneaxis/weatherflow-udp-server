@@ -1,5 +1,5 @@
 {
-    "UDPPORT": 50222,
+    "UDPPORT": 50221,
     "mongoDBName": "",
     "mongoDBHost": "",
     "mongoDBPort": 27017,

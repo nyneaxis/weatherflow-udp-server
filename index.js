@@ -4,6 +4,7 @@ const mongo = require("mongodb").MongoClient;
 const assert = require("assert");
 const Influx = require("influx");
 const fs = require("fs");
+require('log-timestamp');
 
 //exports
 const {
@@ -16,9 +17,6 @@ const {
     calculateDewPoint,
     covertToFahrenheit,
 } = require("./helpers");
-const {
-    logMessage
-} = require("./log");
 
 const {
     influxDBPublish
@@ -26,16 +24,23 @@ const {
 
 let config = {};
 
-fs.readFile("./config.json", "utf8", function (err, data) {
+fs.readFile("./config/config.json", "utf8", function (err, data) {
     if (err) {
-        logMessage("Error reading file", "error");
+        console.error("Error reading file");
     }
-    logMessage("Config file read", "info");
+    console.info("Config file read");
     config = JSON.parse(data);
 
+    fs.watchFile("./config/config.json", (curr, prev) => {
+        console.info("Config file changed, loading new config file");
+        fs.readFile("./config/config.json", "utf8", function (err, data) {
+            config = JSON.parse(data);
+        });
+
+    });
 
     // Connection URL
-    const url = "mongodb://" + config.mongoDBHost + ":" + config.mongoDBPort;
+    let url = "mongodb://" + config.mongoDBHost + ":" + config.mongoDBPort;
     const dbCollection = "house";
 
     const insertDocuments = function (db, doc, coll, callback) {
@@ -47,11 +52,11 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 assert.equal(err, null);
                 assert.equal(1, result.result.n);
                 assert.equal(1, result.ops.length);
-                //console.log("Inserted document into the collection");
+                //console.info("Inserted document into the collection");
                 callback(result);
             });
         } catch (error) {
-            logMessage(error, "error");
+            console.error(error);
         }
     };
 
@@ -73,7 +78,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 )
             );
 
-            //console.log(createDateTime(msg.obs.time) + " Message: obs_st");
+            console.info("Message: obs_st");
 
             let flattenObj = {
                 timestamp: msg.obs.time,
@@ -125,9 +130,13 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 firmware_revision: Influx.FieldType.INTEGER,
             };
 
-            influxDBPublish(fields, "wf/obs_st", flattenObj);
+            if (config.influxDBHost) {
+                console.info("Sending event to InfluxDB");
+                influxDBPublish(fields, "wf/obs_st", flattenObj);
+            }
 
             if (config.mongoDBHost) {
+                console.info("Sending event to MongoDB");
                 mongo.connect(url, function (err, client) {
                     assert.equal(null, err);
                     const db = client.db(dbCollection);
@@ -141,7 +150,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
 
         if (msg.type == "rapid_wind") {
             msg.ob = decodeRapidWind(msg.ob);
-            //console.log(createDateTime(msg.ob.time) + " Message: rapid_wind");
+            console.info("Message: rapid_wind");
 
             let fields = {
                 direction: Influx.FieldType.INTEGER,
@@ -155,9 +164,13 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 timestamp: msg.ob.timestamp,
             };
 
-            influxDBPublish(fields, "wf/rapid_wind", data);
+            if (config.influxDBHost) {
+                console.info("Sending event to InfluxDB");
+                influxDBPublish(fields, "wf/rapid_wind", data);
+            }
 
             if (config.mongoDBHost) {
+                console.info("Sending event to MongoDB");
                 mongo.connect(url, function (err, client) {
                     assert.equal(null, err);
                     client;
@@ -170,7 +183,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
 
         if (msg.type == "hub_status") {
-            logMessage("Message: hub_status", "info");
+            console.info("Message: hub_status");
 
             let fields = {
                 serial_number: Influx.FieldType.STRING,
@@ -190,9 +203,13 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 reset_flags: msg.reset_flags,
             };
 
-            influxDBPublish(fields, "wf/status_hub", data);
+            if (config.influxDBHost) {
+                console.info("Sending event to InfluxDB");
+                influxDBPublish(fields, "wf/status_hub", data);
+            }
 
             if (config.mongoDBHost) {
+                console.info("Sending event to MongoDB");
                 mongo.connect(url, function (err, client) {
                     assert.equal(null, err);
                     const db = client.db(dbCollection);
@@ -204,7 +221,8 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
 
         if (msg.type == "device_status") {
-            logMessage("Message: device_status", "info");
+            console.info("Sending event to InfluxDB");
+            console.info("Message: device_status");
 
             let fields = {
                 serial_number: Influx.FieldType.STRING,
@@ -232,9 +250,14 @@ fs.readFile("./config.json", "utf8", function (err, data) {
                 debug: msg.debug,
             };
 
-            influxDBPublish(fields, "device_status", data);
+            if (config.influxDBHost) {
+                console.info("Sending event to InfluxDB");
+                influxDBPublish(fields, "device_status", data);
+            }
+
 
             if (config.mongoDBHost) {
+                console.info("Sending event to MongoDB");
                 mongo.connect(url, function (err, client) {
                     assert.equal(null, err);
                     const db = client.db(dbCollection);
@@ -246,7 +269,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
 
         if (msg.type == "evt_strike") {
-            logMessage("Message: evt_strike " + JSON.stringify(msg), "info");
+            console.info("Message: evt_strike " + JSON.stringify(msg));
 
             if (config.mongoDBHost) {
                 mongo.connect(url, function (err, client) {
@@ -260,7 +283,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
 
         if (msg.type == "evt_precip " + JSON.stringify(msg)) {
-            logMessage("Message: evt_precip " + JSON.stringify(msg), "info");
+            console.info("Message: evt_precip " + JSON.stringify(msg));
 
             if (config.mongoDBHost) {
                 mongo.connect(url, function (err, client) {
@@ -274,7 +297,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
     });
 
-    server.bind(config.PORT, () => {
-        logMessage("Server is listening on IP " + server.address().address + " on port " + config.PORT, "info");
+    server.bind(config.UDPPORT, () => {
+        console.info("Server is listening on IP " + server.address().address + " on port " + config.UDPPORT, "info");
     });
 });
