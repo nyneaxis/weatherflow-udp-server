@@ -1,5 +1,3 @@
-var PORT = 50222;
-
 const dgram = require("dgram");
 const server = dgram.createSocket("udp4");
 const mongo = require("mongodb").MongoClient;
@@ -276,7 +274,7 @@ fs.readFile("./config.json", "utf8", function (err, data) {
         }
     });
 
-    server.bind(PORT, () => {
-        logMessage("Server is listening on IP " + server.address().address + " on port " + PORT, "info");
+    server.bind(config.PORT, () => {
+        logMessage("Server is listening on IP " + server.address().address + " on port " + config.PORT, "info");
     });
 });
